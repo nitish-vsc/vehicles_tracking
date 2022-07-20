@@ -1,6 +1,6 @@
 from django.shortcuts import render
-from .models import Vehicle, Path, PathDetail, VehiclePath
-from .serializers import VehicleSerializer, PathSerializer, PathDetailSerializer, VehiclesPathSerializer
+from .models import Vehicle, Path, PathDetail, VehiclePath, TravellLog
+from .serializers import VehicleSerializer, PathSerializer, PathDetailSerializer, VehiclesPathSerializer, TravellLogSerilizer
 from wallet.serializers import WalletSerializer, WalletHistorySerializer
 from wallet.models import WalletHistory, Wallet
 from rest_framework import serializers, status, filters, generics
@@ -11,6 +11,7 @@ from rest_framework.parsers import JSONParser
 import requests as rq
 from datetime import datetime, timedelta
 from django.http import Http404
+import traceback
 
 class VehicleListView(generics.ListAPIView):
     search_fields = ['vehicle_type']
@@ -87,6 +88,7 @@ class PathView(APIView):
 
     def post(self, request):
         data = JSONParser().parse(request)
+        print(data)
         save_path_detail = PathSerializer(data=data)
         if save_path_detail.is_valid():
             save_path_detail.save()
@@ -211,6 +213,35 @@ class VehicleTimeView(APIView):
         else:
             return Response({'success': False, 'msg': "your current path time not update"}, status=400)
 
+# class VehicleTime():
+#     def vehicleTime(self, data):
+#         path_detail = PathDetail.objects.filter(path_id=data['path'])
+#         path_detail_obj = PathDetail.objects.get(id=data['detail_id'])
+#         dto = datetime.strptime(data['arrival_time'], '%Y-%m-%d %H:%M:%S')
+#         for route in path_detail:
+#             if route.distance == path_detail_obj.distance:
+#                 time_dict = {'id': route.id, 'arrival_time': dto}
+#             elif route.distance > path_detail_obj.distance:
+#                 current_distance = route.distance - path_detail_obj.distance
+#                 time = current_distance/30
+#                 time = time*60
+#                 dtuo = dto + timedelta(hours=0, minutes=time)
+#                 print(dtuo)
+#                 time_dict = {'id': route.id, 'arrival_time': dtuo}
+#             else:
+#                 current_distance = path_detail_obj.distance - route.distance
+#                 time = current_distance/30
+#                 time = time*60
+#                 dtuo = dto - timedelta(hours=0, minutes=time)
+#                 print(dtuo)
+#                 time_dict = {'id': route.id, 'arrival_time': dtuo}
+#             serializer = PathDetailSerializer(route, data=time_dict, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return True
+#         else:
+#             return False
+
 class PathVehicleView(APIView):
     permission_classes = (AllowAny,)
 
@@ -238,6 +269,8 @@ class PathVehicleView(APIView):
             wallet_amount = {'id': wallet_id, 'amount': updated_amount, 'user': user}
             wallet_serializer = WalletSerializer(wallet, data=wallet_amount, partial=True)
             serializer = WalletHistorySerializer(data=wallet_history)
+            travel_log_view = TravellLogView()
+            travel_log_view.insert(data)
             if(save_vehicle_path.is_valid() and serializer.is_valid() and wallet_serializer.is_valid()):
                 serializer.save()
                 save_vehicle_path.save()
@@ -246,7 +279,7 @@ class PathVehicleView(APIView):
             else:
                 return Response({'success': False, 'msg': "vehicle path not saved"}, status=400)
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
 
     def delete(self, request, id,):
         vehicle_path_del = VehiclePath.objects.filter(id=id).delete()
@@ -282,3 +315,13 @@ class PathVehicleView(APIView):
             return Response(response_data, status=200)
         else:
             return Response({'success': False, 'msg': "your path detail not update"}, status=400)
+
+class TravellLogView():
+    def insert(self, data):
+        travell_log = TravellLog.objects.filter(vehicle_id=data['vehicle']).delete()
+        save_travell_log = TravellLogSerilizer(data=data)
+        if save_travell_log.is_valid():
+            save_travell_log.save()
+            return True
+        else:
+            return False

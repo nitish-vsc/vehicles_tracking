@@ -30,6 +30,7 @@ class VehiclePath(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     path = models.ForeignKey(Path, on_delete=models.CASCADE)
 
+
 class PathDetail(models.Model):
     path = models.ForeignKey(Path, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
@@ -37,10 +38,17 @@ class PathDetail(models.Model):
     lattitude = models.CharField(max_length=50)
     longitude = models.CharField(max_length=50)
     distance = models.IntegerField()
-    arrival_time = models.DateTimeField(null=True, blank=True)
-    depature_time = models.DateTimeField(null=True, blank=True)
+    arrival_time =  models.DateTimeField(default=None)
+    depature_time = models.DateTimeField(default=None)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+class TravellLog(models.Model):
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
+    lattitude = models.CharField(max_length=50)
+    longitude = models.CharField(max_length=50)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Vehicle, Path, PathDetail, VehiclePath
+from .models import Vehicle, Path, PathDetail, VehiclePath,TravellLog
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,7 +9,7 @@ class VehicleSerializer(serializers.ModelSerializer):
 class PathSerializer(serializers.ModelSerializer):
     class Meta:
         model = Path
-        fields = ['name', 'description', 'distcane', 'user']
+        fields = ['name', 'description', 'distance', 'user']
 
 class VehiclesPathSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,3 +20,8 @@ class PathDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = PathDetail
         fields = ['name', 'description', 'lattitude', 'longitude', 'distance', 'arrival_time', 'depature_time', 'path']
+
+class TravellLogSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = TravellLog
+        fields = ['vehicle', 'lattitude', 'longitude']

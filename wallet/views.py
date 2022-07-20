@@ -1,14 +1,12 @@
 from django.shortcuts import render
 from .models import WalletHistory, Wallet
 from .serializers import WalletHistorySerializer, WalletSerializer
-from rest_framework import serializers, status, filters, generics
+from rest_framework import serializers, status, filters
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 import requests as rq
-from datetime import datetime, timedelta
-from django.http import Http404
 
 class WalletView(APIView):
     permission_classes = (AllowAny,)

@@ -11,8 +11,8 @@ class Wallet(models.Model):
 
 class WalletHistory(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
-    debit_amount = models.FloatField(max_length=50, null=True, blank=True)
-    credit_amount = models.FloatField(max_length=50, null=True, blank=True)
-    updated_amount = models.FloatField(max_length=50)
+    debit_amount = models.FloatField(default=0)
+    credit_amount = models.FloatField(default=0)
+    updated_amount = models.FloatField()
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
