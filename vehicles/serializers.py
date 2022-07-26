@@ -9,7 +9,7 @@ class VehicleSerializer(serializers.ModelSerializer):
 class PathSerializer(serializers.ModelSerializer):
     class Meta:
         model = Path
-        fields = ['name', 'description', 'distance', 'user']
+        fields = ['id', 'name', 'description', 'distance', 'user']
 
 class VehiclesPathSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,7 +19,7 @@ class VehiclesPathSerializer(serializers.ModelSerializer):
 class PathDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = PathDetail
-        fields = ['name', 'description', 'lattitude', 'longitude', 'distance', 'arrival_time', 'depature_time', 'path']
+        fields = ['id', 'name', 'description', 'lattitude', 'longitude', 'distance', 'arrival_time', 'depature_time', 'path']
 
 class TravellLogSerilizer(serializers.ModelSerializer):
     class Meta:

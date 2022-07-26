@@ -12,6 +12,7 @@ import requests as rq
 from datetime import datetime, timedelta
 from django.http import Http404
 import traceback
+from django.db.models import Q
 
 class VehicleListView(generics.ListAPIView):
     search_fields = ['vehicle_type']
@@ -88,7 +89,6 @@ class PathView(APIView):
 
     def post(self, request):
         data = JSONParser().parse(request)
-        print(data)
         save_path_detail = PathSerializer(data=data)
         if save_path_detail.is_valid():
             save_path_detail.save()
@@ -135,10 +135,10 @@ class PathDetailView(APIView):
     def post(self, request):
         try:
             data = JSONParser().parse(request)
-            for x in data:
-                path_detail = PathDetailSerializer(data=x)
-                if path_detail.is_valid():
-                    path_detail.save()
+            # for x in data:
+            path_detail = PathDetailSerializer(data=data)
+            if path_detail.is_valid():
+                path_detail.save()
             return Response({'success': True, 'msg': "your path detailt saved"}, status=200)
         except data.DoesNotExist:
             raise Http404
@@ -185,8 +185,8 @@ class VehicleTimeView(APIView):
     def patch(self, request):
         try:
             path_detail = PathDetail.objects.filter(path_id=request.data['path'])
-            path_detail_obj = PathDetail.objects.get(id=request.data['detail_id'])
-            dto = datetime.strptime(request.data['arrival_time'], '%Y-%m-%d %H:%M:%S')
+            path_detail_obj = PathDetail.objects.get(Q(id=request.data['path_detail_id']) & Q(path_id=request.data['path']))
+            dto = datetime.strptime(request.data['arrival_time'], '%Y-%m-%d %H:%M')
             for route in path_detail:
                 if route.distance == path_detail_obj.distance:
                     time_dict = {'id': route.id, 'arrival_time': dto}
@@ -195,14 +195,12 @@ class VehicleTimeView(APIView):
                     time = current_distance/30
                     time = time*60
                     dtuo = dto + timedelta(hours=0, minutes=time)
-                    print(dtuo)
                     time_dict = {'id': route.id, 'arrival_time': dtuo}
                 else:
                     current_distance = path_detail_obj.distance - route.distance
                     time = current_distance/30
                     time = time*60
                     dtuo = dto - timedelta(hours=0, minutes=time)
-                    print(dtuo)
                     time_dict = {'id': route.id, 'arrival_time': dtuo}
                 serializer = PathDetailSerializer(route, data=time_dict, partial=True)
                 if serializer.is_valid():
@@ -213,34 +211,6 @@ class VehicleTimeView(APIView):
         else:
             return Response({'success': False, 'msg': "your current path time not update"}, status=400)
 
-# class VehicleTime():
-#     def vehicleTime(self, data):
-#         path_detail = PathDetail.objects.filter(path_id=data['path'])
-#         path_detail_obj = PathDetail.objects.get(id=data['detail_id'])
-#         dto = datetime.strptime(data['arrival_time'], '%Y-%m-%d %H:%M:%S')
-#         for route in path_detail:
-#             if route.distance == path_detail_obj.distance:
-#                 time_dict = {'id': route.id, 'arrival_time': dto}
-#             elif route.distance > path_detail_obj.distance:
-#                 current_distance = route.distance - path_detail_obj.distance
-#                 time = current_distance/30
-#                 time = time*60
-#                 dtuo = dto + timedelta(hours=0, minutes=time)
-#                 print(dtuo)
-#                 time_dict = {'id': route.id, 'arrival_time': dtuo}
-#             else:
-#                 current_distance = path_detail_obj.distance - route.distance
-#                 time = current_distance/30
-#                 time = time*60
-#                 dtuo = dto - timedelta(hours=0, minutes=time)
-#                 print(dtuo)
-#                 time_dict = {'id': route.id, 'arrival_time': dtuo}
-#             serializer = PathDetailSerializer(route, data=time_dict, partial=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return True
-#         else:
-#             return False
 
 class PathVehicleView(APIView):
     permission_classes = (AllowAny,)
@@ -257,24 +227,14 @@ class PathVehicleView(APIView):
         try:
             data = JSONParser().parse(request)
             save_vehicle_path = VehiclesPathSerializer(data=data)
-            path = Path.objects.get(id=id)
-            user = data['user']
-            wallet = Wallet.objects.get(user_id=user)
-            wallet_id = wallet.id
-            price = 5   # per kilometer
-            debit_amount = price * path.distance
-            updated_amount = wallet.amount - debit_amount
-            # credit_amount = 0
-            wallet_history = {'debit_amount':debit_amount, 'updated_amount': updated_amount, 'wallet': wallet_id}
-            wallet_amount = {'id': wallet_id, 'amount': updated_amount, 'user': user}
-            wallet_serializer = WalletSerializer(wallet, data=wallet_amount, partial=True)
-            serializer = WalletHistorySerializer(data=wallet_history)
+            set_wallet = WalletUpdate()
+            set_wallet.updateWallet(data, id)
             travel_log_view = TravellLogView()
             travel_log_view.insert(data)
-            if(save_vehicle_path.is_valid() and serializer.is_valid() and wallet_serializer.is_valid()):
-                serializer.save()
+            set_vehicle_time = VehicleTime()
+            set_vehicle_time.setVehicleTime(data)
+            if(save_vehicle_path.is_valid()):
                 save_vehicle_path.save()
-                wallet_serializer.save()
                 return Response({'success': True, 'msg': "vehicle path saved successfully"}, status=201)
             else:
                 return Response({'success': False, 'msg': "vehicle path not saved"}, status=400)
@@ -324,4 +284,53 @@ class TravellLogView():
             save_travell_log.save()
             return True
         else:
+            return False
+
+class VehicleTime():
+    def setVehicleTime(self, data):
+        if(data):
+            path_detail = PathDetail.objects.filter(path_id=data['path'])
+            path_detail_obj = PathDetail.objects.get(Q(id=data['path_detail_id']) & Q(path_id=data['path']))
+            dto = datetime.strptime(data['arrival_time'], '%Y-%m-%d %H:%M')
+            for route in path_detail:
+                if route.distance == path_detail_obj.distance:
+                    time_dict = {'id': route.id, 'arrival_time': dto}
+                elif route.distance > path_detail_obj.distance:
+                    current_distance = route.distance - path_detail_obj.distance
+                    time = current_distance/30
+                    time = time*60
+                    dtuo = dto + timedelta(hours=0, minutes=time)
+                    time_dict = {'id': route.id, 'arrival_time': dtuo}
+                else:
+                    current_distance = path_detail_obj.distance - route.distance
+                    time = current_distance/30
+                    time = time*60
+                    dtuo = dto - timedelta(hours=0, minutes=time)
+                    time_dict = {'id': route.id, 'arrival_time': dtuo}
+                serializer = PathDetailSerializer(route, data=time_dict, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+            return True
+        else:
+            return False
+
+class WalletUpdate():
+    def updateWallet(self, data, id):
+        path = Path.objects.get(id=id)
+        user = data['user']
+        wallet = Wallet.objects.get(user_id=user)
+        wallet_id = wallet.id
+        price = 5   # per kilometer
+        debit_amount = price * path.distance
+        updated_amount = wallet.amount - debit_amount
+        if (updated_amount > 0):
+            wallet_history = {'debit_amount':debit_amount, 'updated_amount': updated_amount, 'wallet': wallet_id}
+            wallet_amount = {'id': wallet_id, 'amount': updated_amount, 'user': user}
+            wallet_serializer = WalletSerializer(wallet, data=wallet_amount, partial=True)
+            serializer = WalletHistorySerializer(data=wallet_history)
+            if serializer.is_valid() and wallet_serializer.is_valid():
+                serializer.save()
+                wallet_serializer.save()
+            return True
+        else: 
             return False

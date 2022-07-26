@@ -29,6 +29,8 @@ class VehiclePath(models.Model):
     user = models.ForeignKey(RegisterUser, on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     path = models.ForeignKey(Path, on_delete=models.CASCADE)
+    set_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
 
 class PathDetail(models.Model):
@@ -38,8 +40,8 @@ class PathDetail(models.Model):
     lattitude = models.CharField(max_length=50)
     longitude = models.CharField(max_length=50)
     distance = models.IntegerField()
-    arrival_time =  models.DateTimeField(default=None)
-    depature_time = models.DateTimeField(default=None)
+    arrival_time =  models.DateTimeField(default=None, blank=True, null=True)
+    depature_time = models.DateTimeField(default=None, blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
